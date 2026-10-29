@@ -63,16 +63,44 @@ namespace OneJS {
             var p = mgc.painter2D;
             int n = buffer.Length;
             int i = 0;
+#if !UNITY_6000_0_OR_NEWER
+            // Painter2D has no dash support below Unity 6000.0: emulated here by
+            // walking MoveTo/LineTo segments and splitting them into on/off
+            // sub-segments. Arcs/curves are not dashed (still drawn solid) -
+            // dashing those would need the same walk over a curved path length,
+            // which isn't implemented yet.
+            float dashOn = 0f, dashOff = 0f, dashPhase = 0f;
+            Vector2 currentPos = Vector2.zero;
+#endif
             try {
                 while (i < n) {
                     int op = (int)buffer[i++];
                     switch (op) {
                         case OpBeginPath: p.BeginPath(); break;
                         case OpClosePath: p.ClosePath(); break;
-                        case OpMoveTo:
-                            p.MoveTo(new Vector2(buffer[i], buffer[i + 1])); i += 2; break;
-                        case OpLineTo:
-                            p.LineTo(new Vector2(buffer[i], buffer[i + 1])); i += 2; break;
+                        case OpMoveTo: {
+                            var pos = new Vector2(buffer[i], buffer[i + 1]);
+                            p.MoveTo(pos);
+#if !UNITY_6000_0_OR_NEWER
+                            currentPos = pos;
+                            dashPhase = 0f;
+#endif
+                            i += 2; break;
+                        }
+                        case OpLineTo: {
+                            var target = new Vector2(buffer[i], buffer[i + 1]);
+#if !UNITY_6000_0_OR_NEWER
+                            if (dashOn > 0f && dashOff > 0f) {
+                                DrawDashedSegment(p, ref currentPos, target, dashOn, dashOff, ref dashPhase);
+                            } else {
+                                p.LineTo(target);
+                                currentPos = target;
+                            }
+#else
+                            p.LineTo(target);
+#endif
+                            i += 2; break;
+                        }
                         case OpArc:
                             p.Arc(new Vector2(buffer[i], buffer[i + 1]), buffer[i + 2],
                                 Angle.Radians(buffer[i + 3]), Angle.Radians(buffer[i + 4]),
@@ -104,8 +132,21 @@ namespace OneJS {
                         case OpLineCap: p.lineCap = MapLineCap(buffer[i]); i += 1; break;
                         case OpLineJoin: p.lineJoin = MapLineJoin(buffer[i]); i += 1; break;
                         case OpMiterLimit: p.miterLimit = buffer[i]; i += 1; break;
-                        case OpDashOffset: p.dashOffset = buffer[i]; i += 1; break;
-                        case OpDashPattern: p.SetDashPattern(buffer[i], buffer[i + 1]); i += 2; break;
+                        case OpDashOffset:
+#if UNITY_6000_0_OR_NEWER
+                            p.dashOffset = buffer[i];
+#else
+                            dashPhase += buffer[i];
+#endif
+                            i += 1; break;
+                        case OpDashPattern:
+#if UNITY_6000_0_OR_NEWER
+                            p.SetDashPattern(buffer[i], buffer[i + 1]);
+#else
+                            dashOn = buffer[i];
+                            dashOff = buffer[i + 1];
+#endif
+                            i += 2; break;
                         default:
                             Debug.LogWarning(
                                 $"[PainterBridge] Unknown opcode {op} at index {i - 1}; aborting buffer.");
@@ -118,6 +159,48 @@ namespace OneJS {
                 OneJSLog.Exception($"[PainterBridge] Execute failed near index {i}", ex);
             }
         }
+
+#if !UNITY_6000_0_OR_NEWER
+        // Walks from `from` to `to`, splitting the straight segment into on/off
+        // sub-segments of length dashOn/dashOff. `phase` is the distance already
+        // travelled along the current dash cycle, carried across calls so a
+        // multi-segment path dashes continuously instead of restarting at every
+        // LineTo. Draws via MoveTo/LineTo pairs rather than relying on any
+        // native dash support.
+        static void DrawDashedSegment(Painter2D p, ref Vector2 from, Vector2 to, float dashOn, float dashOff, ref float phase) {
+            float period = dashOn + dashOff;
+            var delta = to - from;
+            float total = delta.magnitude;
+            if (total <= 1e-6f) { from = to; return; }
+            var dir = delta / total;
+
+            float posInPeriod = phase % period;
+            if (posInPeriod < 0f) posInPeriod += period;
+            bool penDown = posInPeriod < dashOn;
+            if (penDown) p.MoveTo(from);
+
+            float traveled = 0f;
+            while (traveled < total - 1e-6f) {
+                float distToBoundary = penDown ? (dashOn - posInPeriod) : (period - posInPeriod);
+                float step = Mathf.Min(distToBoundary, total - traveled);
+                traveled += step;
+                var point = from + dir * traveled;
+
+                if (penDown) p.LineTo(point);
+
+                posInPeriod += step;
+                if (posInPeriod >= period - 1e-6f) posInPeriod = 0f;
+
+                if (step >= distToBoundary - 1e-6f && traveled < total - 1e-6f) {
+                    penDown = !penDown;
+                    if (penDown) p.MoveTo(point);
+                }
+            }
+
+            phase += total;
+            from = to;
+        }
+#endif
 
         // JS sends stable opcode-local enum ints (see painter.ts); map them to
         // Unity enums explicitly so the buffer contract does not depend on Unity's

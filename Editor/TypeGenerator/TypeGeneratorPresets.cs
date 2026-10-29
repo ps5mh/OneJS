@@ -117,7 +117,11 @@ namespace OneJS.Editor.TypeGenerator {
                 .AddType<RaycastHit>()
                 .AddType<Collision>()
                 .AddType<ContactPoint>()
+#if UNITY_6000_0_OR_NEWER
                 .AddType<PhysicsMaterial>()
+#else
+                .AddType<PhysicMaterial>()
+#endif
                 .AddType<Joint>()
                 .AddType<FixedJoint>()
                 .AddType<HingeJoint>()

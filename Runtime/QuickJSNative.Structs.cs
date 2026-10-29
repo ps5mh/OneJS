@@ -213,8 +213,15 @@ namespace OneJS {
                             ? (UnityEngine.UIElements.AngleUnit)Convert.ToInt32(au)
                             : UnityEngine.UIElements.AngleUnit.Degree;
                     }
-                    return new UnityEngine.UIElements.Rotate(
-                        new UnityEngine.UIElements.Angle(angleVal, angleUnit), axis);
+                    // The axis-taking constructor only exists from Unity 6000.0; below that,
+                    // m_Axis still exists (same field read above) but has no public setter, so
+                    // it's written back the same way it's read: by reflection. Rotate is a
+                    // struct, so the field has to be set on a boxed copy and unboxed back out;
+                    // SetValue on an unboxed struct argument would silently mutate a throwaway copy.
+                    object boxedRotate = new UnityEngine.UIElements.Rotate(
+                        new UnityEngine.UIElements.Angle(angleVal, angleUnit));
+                    rotateAxisField?.SetValue(boxedRotate, axis);
+                    return (UnityEngine.UIElements.Rotate)boxedRotate;
                 }
             );
 

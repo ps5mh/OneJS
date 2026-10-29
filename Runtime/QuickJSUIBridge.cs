@@ -669,7 +669,23 @@ namespace OneJS {
         // where it was, as preventDefault() on a DOM mousedown does.
         void ApplyNativeSuppressionAndKeepFocus(EventBase e, int flags) {
             ApplyNativeSuppression(e, flags);
-            if ((flags & FLAG_DEFAULT_PREVENTED) != 0) _root.focusController?.IgnoreEvent(e);
+            if ((flags & FLAG_DEFAULT_PREVENTED) == 0) return;
+#if UNITY_6000_0_OR_NEWER
+            _root.focusController?.IgnoreEvent(e);
+#else
+            // No IgnoreEvent gate below Unity 6000.0: the focus move this would
+            // suppress happens in PostDispatch, right after this handler
+            // returns, so it can't be prevented ahead of time. Capture what's
+            // focused now and, if PostDispatch moved focus away, restore it a
+            // tick later - the closest approximation available, at the cost of
+            // an extra blur/focus pair the native gate wouldn't have fired.
+            var fc = _root.focusController;
+            var previouslyFocused = fc?.focusedElement;
+            if (previouslyFocused == null) return;
+            _root.schedule.Execute(() => {
+                if (fc.focusedElement != previouslyFocused) previouslyFocused.Focus();
+            });
+#endif
         }
 
         void OnClick(ClickEvent e) {

@@ -205,9 +205,11 @@ namespace OneJS {
                     // switched back when the spacing is cleared.
                     var spacing = AsLength(value);
                     style.letterSpacing = spacing;
+#if UNITY_6000_0_OR_NEWER
                     style.unityTextGenerator = spacing.keyword == StyleKeyword.Undefined && spacing.value.value != 0f
                         ? TextGeneratorType.Standard
                         : StyleKeyword.Null;
+#endif
                     return true;
                 }
                 case "wordSpacing": style.wordSpacing = AsLength(value); return true;
@@ -283,6 +285,7 @@ namespace OneJS {
             }
             // A filter list (filter from Unity 6.3, backdropFilter from 6.6) written as
             // USS text: found by type, so a property a newer Unity adds needs no case here.
+#if UNITY_6000_3_OR_NEWER
             if (prop.PropertyType == typeof(StyleList<FilterFunction>) && value is string filterText) {
                 if (CustomStyleSheets.UssFilter.TryParse(filterText, out var filters, out var error)) {
                     prop.SetValue(style, filters);
@@ -292,6 +295,7 @@ namespace OneJS {
                 }
                 return;
             }
+#endif
             var converted = QuickJSNative.ConvertToTargetType(value, prop.PropertyType);
             prop.SetValue(style, converted);
         }

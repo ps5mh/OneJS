@@ -8,8 +8,12 @@ namespace OneJS.Editor.TypeGenerator {
     /// <summary>
     /// Virtualized TreeView for displaying and selecting types efficiently.
     /// Only renders visible rows, enabling smooth scrolling with 10,000+ types.
+    /// Built on the classic non-generic TreeView/TreeViewState (not TreeView&lt;int&gt;,
+    /// which only exists from Unity 6000.0): the non-generic API already uses int
+    /// ids natively and has been stable across engine generations, so one
+    /// implementation covers both.
     /// </summary>
-    internal class TypeTreeView : TreeView<int> {
+    internal class TypeTreeView : TreeView {
         public event Action OnSelectionChanged;
 
         private List<TypeEntry> _entries = new();
@@ -24,7 +28,7 @@ namespace OneJS.Editor.TypeGenerator {
         private static GUIContent s_delegateIcon;
         private static bool s_iconsInitialized;
 
-        public TypeTreeView(TreeViewState<int> state) : base(state) {
+        public TypeTreeView(TreeViewState state) : base(state) {
             InitializeIcons();
             showBorder = true;
             showAlternatingRowBackgrounds = true;
@@ -82,13 +86,13 @@ namespace OneJS.Editor.TypeGenerator {
             OnSelectionChanged?.Invoke();
         }
 
-        protected override TreeViewItem<int> BuildRoot() {
+        protected override TreeViewItem BuildRoot() {
             // Root is invisible, depth -1
-            return new TreeViewItem<int>(-1, -1, "Root");
+            return new TreeViewItem(-1, -1, "Root");
         }
 
-        protected override IList<TreeViewItem<int>> BuildRows(TreeViewItem<int> root) {
-            var rows = GetRows() ?? new List<TreeViewItem<int>>();
+        protected override IList<TreeViewItem> BuildRows(TreeViewItem root) {
+            var rows = GetRows() ?? new List<TreeViewItem>();
             rows.Clear();
 
             foreach (var entry in _entries) {
@@ -147,7 +151,7 @@ namespace OneJS.Editor.TypeGenerator {
             };
         }
 
-        protected override bool DoesItemMatchSearch(TreeViewItem<int> item, string search) {
+        protected override bool DoesItemMatchSearch(TreeViewItem item, string search) {
             if (string.IsNullOrEmpty(search)) return true;
 
             var treeItem = item as TypeTreeViewItem;
@@ -162,13 +166,13 @@ namespace OneJS.Editor.TypeGenerator {
             // We use this for potential future features like context menus
         }
 
-        protected override bool CanMultiSelect(TreeViewItem<int> item) => true;
+        protected override bool CanMultiSelect(TreeViewItem item) => true;
     }
 
     /// <summary>
     /// TreeViewItem wrapper that holds the TypeEntry data
     /// </summary>
-    internal class TypeTreeViewItem : TreeViewItem<int> {
+    internal class TypeTreeViewItem : TreeViewItem {
         public TypeEntry Entry { get; }
 
         public TypeTreeViewItem(int id, int depth, string displayName, TypeEntry entry)

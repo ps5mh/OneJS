@@ -88,6 +88,7 @@ namespace OneJS {
         static Material ResolveMaterial() {
             if (!s_MaterialResolved) {
                 s_MaterialResolved = true;
+#if UNITY_6000_0_OR_NEWER
                 var shader = Resources.Load<Shader>("OneJS/UIEParticles");
                 if (shader != null && shader.isSupported) {
                     s_Material = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
@@ -95,6 +96,18 @@ namespace OneJS {
                     Debug.LogWarning("[OneJS Particles] OneJS/UIEParticles shader unavailable; " +
                         "falling back to normal alpha blending (additiveness ignored).");
                 }
+#else
+                // IStyle.unityMaterial (the only hook that lets a VisualElement use a
+                // custom material) doesn't exist below Unity 6000.0, so there is no
+                // way to apply the custom shader regardless of whether it loads.
+                // Reporting no material here routes through the same straight-texture,
+                // default-blending fallback already used when the shader itself is
+                // missing or unsupported - premultiplying the texture without also
+                // being able to swap the blend material would double-apply alpha and
+                // darken edges, so it is not a usable substitute here.
+                Debug.LogWarning("[OneJS Particles] Custom per-element materials are unavailable on this " +
+                    "engine build; falling back to normal alpha blending (additiveness ignored).");
+#endif
             }
             return s_Material;
         }
@@ -185,8 +198,11 @@ namespace OneJS {
                 _emitterTex[i] = _texture;
             RebuildTextureGroups();
 
-            if (_premultiplied)
+            if (_premultiplied) {
+#if UNITY_6000_0_OR_NEWER
                 _ve.style.unityMaterial = MaterialDefinition.FromMaterial(s_Material);
+#endif
+            }
             _ve.generateVisualContent += OnGenerateVisualContent;
         }
 
@@ -199,8 +215,11 @@ namespace OneJS {
             _disposed = true;
             _alive = 0;
             _ve.generateVisualContent -= OnGenerateVisualContent;
-            if (_premultiplied)
+            if (_premultiplied) {
+#if UNITY_6000_0_OR_NEWER
                 _ve.style.unityMaterial = StyleKeyword.Null;
+#endif
+            }
             if (_ve.panel != null)
                 _ve.MarkDirtyRepaint();
         }

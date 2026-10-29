@@ -1,3 +1,4 @@
+#if UNITY_6000_3_OR_NEWER
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -51,3 +52,4 @@ namespace OneJS.Tests.Editor {
         }
     }
 }
+#endif

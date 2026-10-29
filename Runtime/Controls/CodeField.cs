@@ -518,7 +518,9 @@ namespace OneJS {
             // Find the TextElement child and configure it
             _textElement = this.Q<TextElement>();
             if (_textElement != null) {
+#if UNITY_6000_0_OR_NEWER
                 _textElement.PostProcessTextVertices = ColorizeGlyphs;
+#endif
             }
 
             // Configure horizontal scrolling
@@ -539,7 +541,9 @@ namespace OneJS {
                 if (_textElement == null) {
                     _textElement = this.Q<TextElement>();
                     if (_textElement != null) {
+#if UNITY_6000_0_OR_NEWER
                         _textElement.PostProcessTextVertices = ColorizeGlyphs;
+#endif
                     }
                 }
 
@@ -728,7 +732,9 @@ namespace OneJS {
 #endif
                 if (isCommentShortcut) {
                     evt.StopPropagation();
+#if UNITY_6000_0_OR_NEWER
                     focusController?.IgnoreEvent(evt);
+#endif
                     HandleToggleComment();
                 }
             }
@@ -1164,6 +1170,7 @@ namespace OneJS {
             return true;
         }
 
+#if UNITY_6000_0_OR_NEWER
         private void ColorizeGlyphs(TextElement.GlyphsEnumerable glyphs) {
             if (_visibleCharacterColors == null || _visibleCharacterColors.Length == 0)
                 return;
@@ -1186,5 +1193,6 @@ namespace OneJS {
                 glyphIndex++;
             }
         }
+#endif
     }
 }

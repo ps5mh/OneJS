@@ -16,6 +16,13 @@ namespace OneJS.CustomStyleSheets {
     /// Uses ExCSS for parsing and reflection to access Unity's internal StyleSheetBuilder.
     /// </summary>
     public class UssCompiler {
+        // The bundled CSS parser is built as OneJS.ExCSS.dll (not ExCSS.Unity.dll,
+        // its upstream name): the engine's own built-in USS importer carries its
+        // own same-named ExCSS.Unity assembly, and the two colliding by simple
+        // name corrupted that importer for every .uss asset in the project
+        // (confirmed: it broke the engine's own .tss import with a
+        // TypeLoadException). Renaming the identity (not the `ExCSS` namespace
+        // code uses) removes the collision without touching the parser itself.
         readonly StyleSheetBuilderWrapper _builder;
         readonly StylesheetParser _parser;
         readonly string _workingDir;
@@ -36,6 +43,7 @@ namespace OneJS.CustomStyleSheets {
         }
 
         public List<UssDiagnostic> Diagnostics { get; } = new List<UssDiagnostic>();
+
 
         // Unity's own USS property table, so the unknown-name check can never
         // disagree with what this editor version actually supports. Internal,

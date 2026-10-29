@@ -20,6 +20,16 @@ namespace OneJS.CustomStyleSheets {
     /// holds every input to the result a compiled sheet gives.
     /// </summary>
     public static class UssFilter {
+#if !UNITY_6000_3_OR_NEWER
+        // IStyle.filter/backdropFilter and the FilterFunction type don't exist
+        // before Unity 6.3: there is no filter list to build, so every value
+        // is refused instead of failing to compile against a missing type.
+        public static bool TryParse(string value, out object result, out string error) {
+            result = null;
+            error = "filter/backdropFilter requires Unity 6.3+";
+            return false;
+        }
+#else
         /// <summary>
         /// Parses <paramref name="value"/>. Returns false, with the reason in
         /// <paramref name="error"/>, for anything Unity could not draw.
@@ -177,5 +187,6 @@ namespace OneJS.CustomStyleSheets {
             DimensionUnit.Millisecond => value * 0.001f,
             _ => value,
         };
+#endif
     }
 }

@@ -9,10 +9,16 @@
     "allowUnsafeCode": true,
     "overrideReferences": true,
     "precompiledReferences": [
-        "ExCSS.Unity.dll"
+        "OneJS.ExCSS.dll"
     ],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.modules.vectorgraphics",
+            "expression": "1.0.0",
+            "define": "ONEJS_VECTORGRAPHICS"
+        }
+    ],
     "noEngineReferences": false
 }

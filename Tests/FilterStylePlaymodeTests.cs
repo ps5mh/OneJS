@@ -1,3 +1,4 @@
+#if UNITY_6000_3_OR_NEWER
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -204,3 +205,4 @@ namespace OneJS.Tests {
         }
     }
 }
+#endif

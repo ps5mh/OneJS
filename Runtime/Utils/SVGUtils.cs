@@ -1,6 +1,7 @@
 using System.IO;
 using UnityEngine;
 using UnityEngine.UIElements;
+#if ONEJS_VECTORGRAPHICS
 using Unity.VectorGraphics;
 
 namespace OneJS {
@@ -12,6 +13,10 @@ namespace OneJS {
     /// that cannot survive the JS interop boundary (struct serialization loses
     /// complex reference-type properties). By doing the full pipeline in C#,
     /// only the final VectorImage (a ScriptableObject) crosses the boundary.
+    ///
+    /// Requires com.unity.modules.vectorgraphics, which some Unity-engine forks
+    /// (e.g. Tuanjie) do not ship; absent that module, this type does not exist
+    /// and loadImage() for .svg fails at the JS/C# boundary instead.
     /// </summary>
     public static class SVGUtils {
         public static VectorImage LoadFromString(string svgContent) {
@@ -21,3 +26,4 @@ namespace OneJS {
         }
     }
 }
+#endif

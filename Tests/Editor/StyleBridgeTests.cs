@@ -77,7 +77,9 @@ namespace OneJS.Tests.Editor {
             Assert.AreEqual(StyleKeyword.Null, el.style.display.keyword, "display");
             Assert.AreEqual(StyleKeyword.Null, el.style.unityParagraphSpacing.keyword, "unityParagraphSpacing");
             Assert.AreEqual(StyleKeyword.Null, el.style.letterSpacing.keyword, "letterSpacing");
+#if UNITY_6000_0_OR_NEWER
             Assert.AreEqual(StyleKeyword.Null, el.style.unityTextGenerator.keyword, "letterSpacing's text generator");
+#endif
             LogAssert.NoUnexpectedReceived();
         }
 

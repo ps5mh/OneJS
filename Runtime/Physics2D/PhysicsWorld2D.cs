@@ -98,15 +98,24 @@ namespace OneJS {
             rb.bodyType = wire.type == 0 ? RigidbodyType2D.Dynamic
                 : wire.type == 1 ? RigidbodyType2D.Kinematic
                 : RigidbodyType2D.Static;
+#if UNITY_6000_0_OR_NEWER
             rb.linearDamping = wire.linearDamping;
             rb.angularDamping = wire.angularDamping;
+#else
+            rb.drag = wire.linearDamping;
+            rb.angularDrag = wire.angularDamping;
+#endif
             rb.freezeRotation = wire.fixedRotation;
             // A static body has no velocity to set, and Unity warns per
             // assignment rather than ignoring it quietly. Five static ramps in
             // one world were twenty lines of console before the game drew a
             // frame, which buries whatever a game prints on purpose.
             if (rb.bodyType != RigidbodyType2D.Static) {
+#if UNITY_6000_0_OR_NEWER
                 rb.linearVelocity = new Vector2(wire.vx / ppu, -wire.vy / ppu);
+#else
+                rb.velocity = new Vector2(wire.vx / ppu, -wire.vy / ppu);
+#endif
                 rb.angularVelocity = -wire.angularVelocity;
             }
             // Small fast things tunnel through thin walls with discrete
@@ -305,7 +314,11 @@ namespace OneJS {
             var rb = RigidbodyAt(index);
             if (rb == null) return;
             var ppu = _doc.pixelsPerUnit;
+#if UNITY_6000_0_OR_NEWER
             rb.linearVelocity = new Vector2(x / ppu, -y / ppu);
+#else
+            rb.velocity = new Vector2(x / ppu, -y / ppu);
+#endif
         }
 
         /// <summary>
